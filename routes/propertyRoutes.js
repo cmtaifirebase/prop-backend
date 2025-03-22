@@ -8,19 +8,25 @@ const {
   getLatestProperties,
 } = require("../services/propertyServices");
 const { successResponse, errorResponse } = require("../utils/responseManager");
-const { uploadImages, upload } = require("../controllers/imageController"); // Import upload middleware
+const { uploadFiles, upload } = require("../controllers/imageController"); // Updated import
 
 const router = express.Router();
 
-// Create a new property with multiple images
-router.post("/newProperty", upload.array("images", 10), async (req, res) => {
+// Create a new property with images & videos
+router.post("/newProperty", upload.fields([{ name: "images", maxCount: 10 }, { name: "videos", maxCount: 5 }]), async (req, res) => {
   try {
     const propertyData = req.body;
 
-    // If images are uploaded, handle the file upload via uploadImages
-    if (req.files && req.files.length > 0) {
-      const imageUrls = await uploadImages(req.files); // Upload multiple images
-      propertyData.images = imageUrls; // Add the image URLs to propertyData
+    // Handle image uploads
+    if (req.files["images"]) {
+      const uploadedImages = await uploadFiles(req.files["images"]);
+      propertyData.images = uploadedImages.map(file => file.url); // Store only URLs
+    }
+
+    // Handle video uploads
+    if (req.files["videos"]) {
+      const uploadedVideos = await uploadFiles(req.files["videos"]);
+      propertyData.videos = uploadedVideos.map(file => file.url);
     }
 
     const newProperty = await createProperty(propertyData);
@@ -61,16 +67,22 @@ router.get("/getPropertyById/:id", async (req, res) => {
   }
 });
 
-// Update property data with multiple images
-router.put("/updateProperty/:id", upload.array("images", 10), async (req, res) => {
+// Update property with new images & videos (optional)
+router.put("/updateProperty/:id", upload.fields([{ name: "images", maxCount: 10 }, { name: "videos", maxCount: 5 }]), async (req, res) => {
   try {
     const propertyId = req.params.id;
     const propertyData = req.body;
 
-    // If new images are uploaded, handle the file upload via uploadImages
-    if (req.files && req.files.length > 0) {
-      const imageUrls = await uploadImages(req.files); // Upload multiple images
-      propertyData.images = imageUrls; // Add the image URLs to propertyData
+    // Handle image uploads
+    if (req.files["images"]) {
+      const uploadedImages = await uploadFiles(req.files["images"]);
+      propertyData.images = uploadedImages.map(file => file.url);
+    }
+
+    // Handle video uploads
+    if (req.files["videos"]) {
+      const uploadedVideos = await uploadFiles(req.files["videos"]);
+      propertyData.videos = uploadedVideos.map(file => file.url);
     }
 
     const updatedProperty = await updateProperty(propertyId, propertyData);
