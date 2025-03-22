@@ -19,7 +19,7 @@ app.use(cors());
 app.use(bodyParser.json()); // to parse JSON request bodies
 
 // User routes
-app.use("/v1/property/", propertyRoutes);
+app.use("/v1/property", propertyRoutes);
 
 // Catch all route for 404 (route not found)
 app.use((req, res) => {
