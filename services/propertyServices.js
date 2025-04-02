@@ -1,11 +1,25 @@
 const { db } = require('../config/firebase');
-const { collection, addDoc, getDoc, doc, setDoc, deleteDoc, getDocs, query, orderBy, limit } = require('firebase/firestore');
+const { collection, addDoc, getDoc, getDocs, doc, setDoc, deleteDoc, query, orderBy, limit } = require('firebase/firestore');
 
 // Create a new property in Firestore with createdOn timestamp
 const createProperty = async (propertyData) => {
     try {
-        const propertyWithTimestamp = { ...propertyData, createdOn: Date.now(), updatedOn: Date.now() };
+        // Fetch all documents to determine the count
+        const propertiesSnapshot = await getDocs(collection(db, "properties"));
+        const propertyCount = propertiesSnapshot.size + 1; // Next property number
+
+        // Generate property number in the format PROP01, PROP02, etc.
+        const propertyNo = `PROP${propertyCount.toString().padStart(2, "0")}`;
+
+        const propertyWithTimestamp = { 
+            ...propertyData, 
+            propertyNo, // Store property number
+            createdOn: Date.now(), 
+            updatedOn: Date.now() 
+        };
+
         const docRef = await addDoc(collection(db, "properties"), propertyWithTimestamp);
+        
         return { id: docRef.id, ...propertyWithTimestamp };
     } catch (error) {
         throw new Error("Error creating property: " + error.message);
